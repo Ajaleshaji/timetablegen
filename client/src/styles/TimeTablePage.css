@@ -1,0 +1,36 @@
+.timetable-display {
+    background-color: #FFF1F5;
+    color: #D82F5A;
+    text-align: center;
+    padding: 20px;
+    border-radius: 10px;
+    max-width: 80%;
+    margin: auto;
+    box-shadow: 0px 4px 10px rgba(216, 47, 90, 0.2);
+  }
+  
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    background-color: #FFF1F5;
+    color: #D82F5A;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0px 4px 8px rgba(216, 47, 90, 0.2);
+  }
+  
+  th, td {
+    border: 1px solid #D82F5A;
+    padding: 12px;
+    text-align: center;
+  }
+  
+  th {
+    background-color: #D82F5A;
+    color: #FFF1F5;
+  }
+  
+  td {
+    background-color: #FFF1F5;
+  }
+  
