@@ -1,27 +1,24 @@
 import React, { useState, useEffect } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import axios from "axios";
 import "../styles/SubjectSelection.css";
 
 const SubjectSelection = () => {
   const { id, year } = useParams();
-  console.log(id, year)
+  const navigate = useNavigate(); // <-- Add navigate hook
 
-  // States for subject selection
   const [staffId, setStaffId] = useState("");
   const [courseId, setCourseId] = useState("");
   const [department, setDepartment] = useState("");
   const [section, setSection] = useState("");
   const [preferences, setPreferences] = useState("");
 
-  // States for department selection
   const [deptName, setDeptName] = useState("");
   const [deptSection, setDeptSection] = useState("");
 
-  // State to store entered entries
   const [entries, setEntries] = useState([]);
   const [departmentEntries, setDepartmentEntries] = useState([]);
-
+  const [timetable, setTimetable] = useState(null);
 
   useEffect(() => {
     const fetchTimetable = async () => {
@@ -32,8 +29,8 @@ const SubjectSelection = () => {
         let foundYear = null;
 
         data.forEach((batch) => {
-          batch.timetables.forEach((timetable) => {
-            timetable.years.forEach((yearData) => {
+          batch.timetables.forEach((tt) => {
+            tt.years.forEach((yearData) => {
               if (yearData.yearNumber === parseInt(year)) {
                 foundYear = yearData;
               }
@@ -51,15 +48,13 @@ const SubjectSelection = () => {
     };
 
     fetchTimetable();
-  }, [year]);   // Depend on `year` only to avoid unnecessary re-fetching
-
-
+  }, [year]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
     const fromYear = parseInt(id, 10);
-    const selectedYear = parseInt(year, 10); // The specific academic year selected
+    const selectedYear = parseInt(year, 10);
 
     const newEntry = { staffId, courseId, department, section, preferences };
 
@@ -67,47 +62,42 @@ const SubjectSelection = () => {
       const response = await axios.post("http://localhost:5000/timetablesdetails", {
         fromYear,
         toYear: fromYear + 3,
-        year: selectedYear, // Include the specific year
+        year: selectedYear,
         subjects: [newEntry],
       });
 
       if (response.status === 201) {
-        setEntries([...entries, newEntry]);
-        // States for subject selection
-        setStaffId("")
-        setCourseId("")
-        setDepartment("")
-        setSection("")
-        setPreferences("")
-        // Reset form fields
+        setEntries((prev) => [...prev, newEntry]);
+        setStaffId("");
+        setCourseId("");
+        setDepartment("");
+        setSection("");
+        setPreferences("");
       }
     } catch (error) {
       console.error("Error saving subject:", error.response?.data || error.message);
-      alert("Error saving subject. Please check your input.");
+      alert("Error saving subject. Please try again.");
     }
   };
 
-
-
   const handleDepartmentSubmit = async (e) => {
     e.preventDefault();
-  
+
     const fromYear = parseInt(id, 10);
-    const toYear = fromYear + 3;
     const selectedYear = parseInt(year, 10);
-  
+
     const newDeptEntry = { deptName, deptSection };
-  
+
     try {
       const response = await axios.post("http://localhost:5000/timetablesdetails/departments", {
         fromYear,
-        toYear,
+        toYear: fromYear + 3,
         year: selectedYear,
         departments: [newDeptEntry],
       });
-  
+
       if (response.status === 201) {
-        setDepartmentEntries([...departmentEntries, newDeptEntry]);
+        setDepartmentEntries((prev) => [...prev, newDeptEntry]);
         setDeptName("");
         setDeptSection("");
       }
@@ -116,50 +106,46 @@ const SubjectSelection = () => {
       alert("Error saving department. Please try again.");
     }
   };
-  
 
+  const generateTimetable = async () => {
+    try {
 
+      const response = await axios.post("http://localhost:5000/generateTimetable", {
+        fromYear: parseInt(id, 10),
+        year: parseInt(year, 10),
+      });
 
-  // Dummy function to prevent errors (implement actual logic if needed)
-  const generateTimetable = () => {
-    alert("Timetable generation functionality will be implemented.");
+      if (response.status === 200) {
+        setTimetable(response.data.timetable);
+
+        // Navigate to the timetable page after successful generation
+         navigate(`/createtimetable/timetable/${id}/${year}/timetablepage`);
+      } else {
+        alert("Error generating timetable: " + response.data.error);
+      }
+    } catch (error) {
+      console.error("Error generating timetable:", error);
+      alert("Failed to generate timetable.");
+    }
   };
 
   return (
     <div className="details-container">
       <div className="page-container">
         <div className="subject-selection-container">
-          <h2>Assign Subjects - Timetable {parseInt(id) + 0}, Year {year}</h2>
+          <h2>Assign Subjects - Timetable {id}, Year {year}</h2>
           <form onSubmit={handleSubmit} className="subject-form">
             <label>Staff ID:</label>
-            <input
-              type="text"
-              value={staffId}
-              onChange={(e) => setStaffId(e.target.value)}
-              required
-            />
+            <input type="text" value={staffId} onChange={(e) => setStaffId(e.target.value)} required />
 
             <label>Course ID:</label>
-            <input
-              type="text"
-              value={courseId}
-              onChange={(e) => setCourseId(e.target.value)}
-              required
-            />
+            <input type="text" value={courseId} onChange={(e) => setCourseId(e.target.value)} required />
 
             <label>Department:</label>
-            <input
-              type="text"
-              value={department}
-              onChange={(e) => setDepartment(e.target.value)}
-              required
-            />
+            <input type="text" value={department} onChange={(e) => setDepartment(e.target.value)} required />
 
             <label>Section:</label>
-            <select
-              value={section}
-              onChange={(e) => setSection(e.target.value)}
-            >
+            <select value={section} onChange={(e) => setSection(e.target.value)}>
               <option value="">Select Section (Optional)</option>
               <option value="A">A</option>
               <option value="B">B</option>
@@ -168,12 +154,7 @@ const SubjectSelection = () => {
             </select>
 
             <label>Subject Preferences (Max Weekly Slots):</label>
-            <input
-              type="number"
-              value={preferences}
-              onChange={(e) => setPreferences(e.target.value)}
-              required
-            />
+            <input type="number" value={preferences} onChange={(e) => setPreferences(e.target.value)} required />
 
             <button type="submit" className="submit-btn">Submit</button>
           </form>
@@ -211,37 +192,24 @@ const SubjectSelection = () => {
       </div>
 
       <div className="department-selection-container">
-        <div className="department-chooses">
-          <h2>Select Department for Timetable</h2>
-          <form onSubmit={handleDepartmentSubmit}>
-            <label htmlFor="department">Department:</label>
-            <input
-              type="text"
-              id="department"
-              name="department"
-              value={deptName}
-              onChange={(e) => setDeptName(e.target.value)}
-              required
-            />
+      <div className="department-chooses">
+        <h2>Select Department for Timetable</h2>
+        <form onSubmit={handleDepartmentSubmit}>
+          <label>Department:</label>
+          <input type="text" value={deptName} onChange={(e) => setDeptName(e.target.value)} required />
 
-            <label htmlFor="section">Section:</label>
-            <select
-              id="section"
-              name="section"
-              value={deptSection}
-              onChange={(e) => setDeptSection(e.target.value)}
-            >
-              <option value="">Select Section (Optional)</option>
-              <option value="A">A</option>
-              <option value="B">B</option>
-              <option value="C">C</option>
-              <option value="D">D</option>
-            </select>
+          <label>Section:</label>
+          <select value={deptSection} onChange={(e) => setDeptSection(e.target.value)}>
+            <option value="">Select Section (Optional)</option>
+            <option value="A">A</option>
+            <option value="B">B</option>
+            <option value="C">C</option>
+            <option value="D">D</option>
+          </select>
 
-            <button type="submit" className="submit-btn">Submit</button>
-          </form>
+          <button type="submit" className="submit-btn">Submit</button>
+        </form>
         </div>
-
         <div className="department-display">
           <h3>Selected Departments</h3>
           {departmentEntries.length > 0 ? (

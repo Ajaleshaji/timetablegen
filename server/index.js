@@ -131,76 +131,43 @@ app.post("/timetables", async (req, res) => {
 
 app.post("/timetablesdetails", async (req, res) => {
   try {
-    console.log("📥 Received Data:", req.body);
+    let { fromYear, toYear, year, subjects } = req.body;
 
-    // Destructure with defaults
-    let { fromYear, toYear, departments, subjects, year } = req.body;
-
-    // Convert string to numbers safely
     fromYear = parseInt(fromYear, 10);
     toYear = parseInt(toYear, 10);
     year = parseInt(year, 10);
 
-    // Validate year inputs
-    if (isNaN(fromYear) || isNaN(toYear) || isNaN(year) || fromYear <= 1900 || toYear <= 1900) {
-      return res.status(400).json({ message: "❌ Invalid fromYear, toYear, or year. Please check input values." });
+    if (!fromYear || !toYear || !year || !Array.isArray(subjects)) {
+      return res.status(400).json({ message: "Invalid data provided." });
     }
 
-    // Ensure arrays
-    subjects = Array.isArray(subjects) ? subjects : [];
-    departments = Array.isArray(departments) ? departments : [];
-
-    // Find or create the batch
     let batch = await Batch.findOne({ fromYear, toYear });
-
     if (!batch) {
-      // Create a new batch with empty timetable structure
       batch = new Batch({
         fromYear,
         toYear,
-        timetables: [
-          {
-            years: [], // We'll populate below
-          },
-        ],
+        timetables: [{ years: [] }],
       });
     }
 
-    // Reference to the first timetable object
     const timetable = batch.timetables[0];
+    let yearEntry = timetable.years.find((y) => y.yearNumber === year);
 
-    // Check if the year already exists
-    const existingYear = timetable.years.find((y) => y.yearNumber === year);
-
-    if (existingYear) {
-      // Merge data (optional: deduplicate later if needed)
-      if (subjects.length) existingYear.subjects.push(...subjects);
-      if (departments.length) existingYear.departments.push(...departments);
-    } else {
-      // Add new year entry
-      timetable.years.push({
-        yearNumber: year,
-        subjects: [...subjects], // spread to avoid shared reference
-        departments: [...departments],
-      });
+    if (!yearEntry) {
+      yearEntry = { yearNumber: year, subjects: [], departments: [] };
+      timetable.years.push(yearEntry);
     }
 
-    // Save the batch
+    yearEntry.subjects.push(...subjects);
+
     await batch.save();
-
-    res.status(201).json({
-      message: "✅ Timetable updated successfully",
-      batch,
-    });
-
+    res.status(201).json({ message: "✅ Subject(s) added successfully", batch });
   } catch (error) {
-    console.error("❌ Error updating timetable:", error);
-    res.status(500).json({
-      message: "❌ Error updating timetable",
-      error: error.message,
-    });
+    console.error("❌ Error in /timetablesdetails:", error);
+    res.status(500).json({ message: "Server error", error: error.message });
   }
 });
+
 
 // POST route only for department entries
 app.post("/timetablesdetails/departments", async (req, res) => {
@@ -211,49 +178,37 @@ app.post("/timetablesdetails/departments", async (req, res) => {
     toYear = parseInt(toYear, 10);
     year = parseInt(year, 10);
 
-    if (isNaN(fromYear) || isNaN(toYear) || isNaN(year)) {
-      return res.status(400).json({ message: "Invalid input values" });
-    }
-
-    if (!Array.isArray(departments)) {
-      departments = [];
+    if (!fromYear || !toYear || !year || !Array.isArray(departments)) {
+      return res.status(400).json({ message: "Invalid data provided." });
     }
 
     let batch = await Batch.findOne({ fromYear, toYear });
-
     if (!batch) {
       batch = new Batch({
         fromYear,
         toYear,
-        timetables: [
-          {
-            years: [],
-          },
-        ],
+        timetables: [{ years: [] }],
       });
     }
 
     const timetable = batch.timetables[0];
+    let yearEntry = timetable.years.find((y) => y.yearNumber === year);
 
-    const existingYear = timetable.years.find((y) => y.yearNumber === year);
-
-    if (existingYear) {
-      existingYear.departments.push(...departments);
-    } else {
-      timetable.years.push({
-        yearNumber: year,
-        departments: [...departments],
-        subjects: [],
-      });
+    if (!yearEntry) {
+      yearEntry = { yearNumber: year, subjects: [], departments: [] };
+      timetable.years.push(yearEntry);
     }
 
+    yearEntry.departments.push(...departments);
+
     await batch.save();
-    res.status(201).json({ message: "✅ Departments added successfully", batch });
+    res.status(201).json({ message: "✅ Department(s) added successfully", batch });
   } catch (error) {
-    console.error("❌ Error saving departments:", error);
-    res.status(500).json({ message: "Error saving departments", error: error.message });
+    console.error("❌ Error in /timetablesdetails/departments:", error);
+    res.status(500).json({ message: "Server error", error: error.message });
   }
 });
+
 
 
 app.get("/timetablesdetails", async (req, res) => {
@@ -274,7 +229,63 @@ app.get("/timetables", async (req, res) => {
     res.status(500).json({ message: "Error fetching timetables", error: error.message });
   }
 });
+app.post('/generateTimetable', async (req, res) => {
+  try {
+    const { fromYear, year } = req.body;
 
+    if (!fromYear || !year) {
+      return res.status(400).json({ error: "fromYear and year are required." });
+    }
+
+    const batch = await Batch.findOne({ fromYear });
+    if (!batch) return res.status(404).json({ message: "Batch not found" });
+
+    const yearData = batch.timetables[0].years.find(y => y.yearNumber === year);
+    if (!yearData || !yearData.subjects.length) {
+      return res.status(404).json({ message: "No subjects found for this year" });
+    }
+
+    // Generate timetable using subjects
+    const defaultTimetable = [
+      { day: "Monday", slots: ["", "", "", "", "", ""] },
+      { day: "Tuesday", slots: ["", "", "", "", "", ""] },
+      { day: "Wednesday", slots: ["", "", "", "", "", ""] },
+      { day: "Thursday", slots: ["", "", "", "", "", ""] },
+      { day: "Friday", slots: ["", "", "", "", "", ""] },
+    ];
+
+    const generated = defaultTimetable.map((row, dayIndex) => {
+      return {
+        day: row.day,
+        slots: row.slots.map((_, slotIndex) => {
+          const subject = yearData.subjects[(dayIndex * row.slots.length + slotIndex) % yearData.subjects.length];
+          return subject.courseId || "Free";
+        })
+      };
+    });
+
+    res.status(200).json({ timetable: generated });
+  } catch (error) {
+    console.error("❌ Error generating timetable:", error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+
+app.get("/subjects/:fromYear/:year", async (req, res) => {
+  const { fromYear, year } = req.params;
+  try {
+    const batch = await Batch.findOne({ fromYear: parseInt(fromYear) });
+    if (!batch || !batch.timetables[0]) return res.status(404).json({ message: "Batch not found" });
+    const yearData = batch.timetables[0].years.find(y => y.yearNumber === parseInt(year));
+    if (!yearData) return res.status(404).json({ message: "Year data not found" });
+    res.json({ subjects: yearData.subjects });
+  } catch (err) {
+    res.status(500).json({ message: "Server error", error: err.message });
+  }
+});
+
+ 
 // Start Server
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));

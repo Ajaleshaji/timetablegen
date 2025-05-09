@@ -1,112 +1,58 @@
 import React, { useState, useEffect } from "react";
+import { useParams } from "react-router-dom";
 import "../styles/TimetablePage.css";
 
 const TimetablePage = () => {
-  const [departments, setDepartments] = useState([]);
+  const { id, year } = useParams();
   const [subjects, setSubjects] = useState([]);
   const [timetable, setTimetable] = useState(null);
 
+  useEffect(() => {
+    const fetchSubjects = async () => {
+      try {
+        const response = await fetch(`http://localhost:5000/subjects/${id}/${year}`);
+        const data = await response.json();
+        setSubjects(data.subjects || []);
+      } catch (err) {
+        console.error("Error fetching subjects:", err);
+      }
+    };
+  
+    fetchSubjects();
+  }, [id, year]);
+  
 
   useEffect(() => {
-    fetch("http://localhost:5000/departments")
-      .then((res) => res.json())
-      .then((data) => setDepartments(data))
-      .catch((err) => console.error("Error fetching departments:", err));
+    if (subjects.length > 0) {
+      const defaultTimetable = [
+        { day: "Monday", "9:00 - 10:00": "", "10:00 - 11:00": "", "11:15 - 12:15": "", "12:15 - 1:15": "", "2:00 - 3:00": "", "3:00 - 4:00": "" },
+        { day: "Tuesday", "9:00 - 10:00": "", "10:00 - 11:00": "", "11:15 - 12:15": "", "12:15 - 1:15": "", "2:00 - 3:00": "", "3:00 - 4:00": "" },
+        { day: "Wednesday", "9:00 - 10:00": "", "10:00 - 11:00": "", "11:15 - 12:15": "", "12:15 - 1:15": "", "2:00 - 3:00": "", "3:00 - 4:00": "" },
+        { day: "Thursday", "9:00 - 10:00": "", "10:00 - 11:00": "", "11:15 - 12:15": "", "12:15 - 1:15": "", "2:00 - 3:00": "", "3:00 - 4:00": "" },
+        { day: "Friday", "9:00 - 10:00": "", "10:00 - 11:00": "", "11:15 - 12:15": "", "12:15 - 1:15": "", "2:00 - 3:00": "", "3:00 - 4:00": "" },
+      ];
 
-    fetch("http://localhost:5000/subjects")
-      .then((res) => res.json())
-      .then((data) => setSubjects(data))
-      .catch((err) => console.error("Error fetching subjects:", err));
-  }, []);
+      const timetableWithSubjects = defaultTimetable.map((row, dayIndex) => {
+        let filledRow = { ...row };
+        const slots = Object.keys(row).filter((key) => key !== "day");
 
-  const generateTimetable = async () => {
-    try {
-      const response = await fetch("http://localhost:5000/generateTimetable", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ yearRange: "2024-2025" }),
+        slots.forEach((slot, slotIndex) => {
+          const subject = subjects[(dayIndex * slots.length + slotIndex) % subjects.length];
+          filledRow[slot] = subject ? subject.courseId : "Free";
+        });
+
+        return filledRow;
       });
 
-      const data = await response.json();
-      if (response.ok) {
-        setTimetable(data.timetable);
-        alert("Timetable generated successfully!");
-      } else {
-        alert("Error generating timetable: " + data.error);
-      }
-    } catch (error) {
-      console.error("Error:", error);
-      alert("Failed to generate timetable.");
+      setTimetable(timetableWithSubjects);
     }
-  };
+  }, [subjects]);
 
   return (
     <div className="timetable-container">
-      <h2>Timetable Management</h2>
-
-      <div className="table-section">
-        <h3>Departments</h3>
-        {departments.length > 0 ? (
-          <table>
-            <thead>
-              <tr>
-                <th>Department Name</th>
-                <th>Section</th>
-              </tr>
-            </thead>
-            <tbody>
-              {departments.map((dept, index) => (
-                <tr key={index}>
-                  <td>{dept.deptName}</td>
-                  <td>{dept.deptSection || "-"}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        ) : (
-          <p>No departments available.</p>
-        )}
-      </div>
-
-
-      <div className="table-section">
-        <h3>Subjects</h3>
-        {subjects.length > 0 ? (
-          <table>
-            <thead>
-              <tr>
-                <th>Staff ID</th>
-                <th>Course ID</th>
-                <th>Department</th>
-                <th>Section</th>
-                <th>Preferences</th>
-              </tr>
-            </thead>
-            <tbody>
-              {subjects.map((subj, index) => (
-                <tr key={index}>
-                  <td>{subj.staffId}</td>
-                  <td>{subj.courseId}</td>
-                  <td>{subj.department}</td>
-                  <td>{subj.section || "-"}</td>
-                  <td>{subj.preferences}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        ) : (
-          <p>No subjects available.</p>
-        )}
-      </div>
-
-
-      <button className="generate-btn" onClick={generateTimetable}>
-        Generate Timetable
-      </button>
-
-      {timetable && (
+      <h2>Timetable - Batch {id}, Year {year}</h2>
+      {timetable ? (
         <div className="timetable-display">
-          <h3>Generated Timetable</h3>
           <table>
             <thead>
               <tr>
@@ -120,20 +66,22 @@ const TimetablePage = () => {
               </tr>
             </thead>
             <tbody>
-              {timetable.schedule.map((row, index) => (
+              {timetable.map((row, index) => (
                 <tr key={index}>
                   <td>{row.day}</td>
-                  <td>{row["9:00 - 10:00"] || "Free"}</td>
-                  <td>{row["10:00 - 11:00"] || "Free"}</td>
-                  <td>{row["11:15 - 12:15"] || "Free"}</td>
-                  <td>{row["12:15 - 1:15"] || "Free"}</td>
-                  <td>{row["2:00 - 3:00"] || "Free"}</td>
-                  <td>{row["3:00 - 4:00"] || "Free"}</td>
+                  <td>{row["9:00 - 10:00"]}</td>
+                  <td>{row["10:00 - 11:00"]}</td>
+                  <td>{row["11:15 - 12:15"]}</td>
+                  <td>{row["12:15 - 1:15"]}</td>
+                  <td>{row["2:00 - 3:00"]}</td>
+                  <td>{row["3:00 - 4:00"]}</td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
+      ) : (
+        <p>Loading timetable...</p>
       )}
     </div>
   );
