@@ -38,7 +38,9 @@ const TimetablePage = () => {
 
         slots.forEach((slot, slotIndex) => {
           const subject = subjects[(dayIndex * slots.length + slotIndex) % subjects.length];
-          filledRow[slot] = subject ? subject.courseId : "Free";
+          filledRow[slot] = subject ? subject.staffId + " (" + subject.courseId + ")" : "Free";
+
+
         });
 
         return filledRow;

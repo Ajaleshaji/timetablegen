@@ -108,26 +108,26 @@ const SubjectSelection = () => {
   };
 
   const generateTimetable = async () => {
-    try {
+  try {
+    const response = await axios.post("http://localhost:5000/generateTimetable", {
+      fromYear: parseInt(id, 10),
+      year: parseInt(year, 10),
+    });
 
-      const response = await axios.post("http://localhost:5000/generateTimetable", {
-        fromYear: parseInt(id, 10),
-        year: parseInt(year, 10),
-      });
+    if (response.status === 200) {
+      setTimetable(response.data.timetable);
 
-      if (response.status === 200) {
-        setTimetable(response.data.timetable);
-
-        // Navigate to the timetable page after successful generation
-         navigate(`/createtimetable/timetable/${id}/${year}/timetablepage`);
-      } else {
-        alert("Error generating timetable: " + response.data.error);
-      }
-    } catch (error) {
-      console.error("Error generating timetable:", error);
-      alert("Failed to generate timetable.");
+      // Navigate to the timetable page after successful generation
+      navigate(`/createtimetable/timetable/${id}/${year}/timetablepage`);
+    } else {
+      alert("Error generating timetable: " + response.data.error);
     }
-  };
+  } catch (error) {
+    console.error("Error generating timetable:", error);
+    alert("Failed to generate timetable.");
+  }
+};
+
 
   return (
     <div className="details-container">

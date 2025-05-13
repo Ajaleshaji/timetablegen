@@ -229,6 +229,7 @@ app.get("/timetables", async (req, res) => {
     res.status(500).json({ message: "Error fetching timetables", error: error.message });
   }
 });
+
 app.post('/generateTimetable', async (req, res) => {
   try {
     const { fromYear, year } = req.body;
@@ -254,15 +255,16 @@ app.post('/generateTimetable', async (req, res) => {
       { day: "Friday", slots: ["", "", "", "", "", ""] },
     ];
 
-    const generated = defaultTimetable.map((row, dayIndex) => {
-      return {
-        day: row.day,
-        slots: row.slots.map((_, slotIndex) => {
-          const subject = yearData.subjects[(dayIndex * row.slots.length + slotIndex) % yearData.subjects.length];
-          return subject.courseId || "Free";
-        })
-      };
-    });
+  const generated = defaultTimetable.map((row, dayIndex) => {
+  return {
+    day: row.day,
+    slots: row.slots.map((_, slotIndex) => {
+      const subject = yearData.subjects[(dayIndex * row.slots.length + slotIndex) % yearData.subjects.length];
+      return subject ? `${subject.staffId} (${subject.courseId})` : "Free";
+    })
+  };
+});
+
 
     res.status(200).json({ timetable: generated });
   } catch (error) {
