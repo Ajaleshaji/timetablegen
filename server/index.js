@@ -246,7 +246,7 @@ app.post('/generateTimetable', async (req, res) => {
       return res.status(404).json({ message: "No subjects found for this year" });
     }
 
-    // Generate timetable using subjects
+    // Base timetable structure (5 days, 6 periods each)
     const defaultTimetable = [
       { day: "Monday", slots: ["", "", "", "", "", ""] },
       { day: "Tuesday", slots: ["", "", "", "", "", ""] },
@@ -255,23 +255,61 @@ app.post('/generateTimetable', async (req, res) => {
       { day: "Friday", slots: ["", "", "", "", "", ""] },
     ];
 
-  const generated = defaultTimetable.map((row, dayIndex) => {
-  return {
-    day: row.day,
-    slots: row.slots.map((_, slotIndex) => {
-      const subject = yearData.subjects[(dayIndex * row.slots.length + slotIndex) % yearData.subjects.length];
-      return subject ? `${subject.staffId} (${subject.courseId})` : "Free";
-    })
-  };
-});
+    // Prepare subject usage counter with preference
+    const subjectUsage = {};
+    yearData.subjects.forEach((subject) => {
+      const key = `${subject.staffId}-${subject.courseId}`;
+      subjectUsage[key] = {
+        ...subject,
+        remaining: subject.preferences || 0,
+      };
+    });
 
+    // Flatten subjects based on preference count
+    const availableSubjects = [];
+    for (const key in subjectUsage) {
+      const { staffId, courseId, remaining } = subjectUsage[key];
+      for (let i = 0; i < remaining; i++) {
+        availableSubjects.push({ staffId, courseId });
+      }
+    }
+
+    // Total available slots in the timetable (5 days * 6 periods)
+    const totalSlots = defaultTimetable.reduce((acc, day) => acc + day.slots.length, 0);
+
+    // If there are more subjects than available slots, it won't fit
+    if (availableSubjects.length > totalSlots) {
+      return res.status(400).json({ error: "Not enough slots to accommodate all subjects based on preference." });
+    }
+
+    // Shuffle the subject list to randomize allocation
+    const shuffledSubjects = availableSubjects.sort(() => Math.random() - 0.5);
+
+    // Fill the timetable respecting preferences
+    let subjectIndex = 0;
+    const generated = defaultTimetable.map((row) => {
+      return {
+        day: row.day,
+        slots: row.slots.map(() => {
+          if (subjectIndex < shuffledSubjects.length) {
+            const subj = shuffledSubjects[subjectIndex++];
+            return `${subj.staffId} (${subj.courseId})`;
+          } else {
+            return "Free";
+          }
+        }),
+      };
+    });
 
     res.status(200).json({ timetable: generated });
+
   } catch (error) {
     console.error("❌ Error generating timetable:", error);
     res.status(500).json({ error: "Internal Server Error" });
   }
 });
+
+
 
 
 app.get("/subjects/:fromYear/:year", async (req, res) => {
