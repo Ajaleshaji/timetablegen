@@ -1,36 +1,73 @@
+.timetable-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;       /* Horizontally center items */
+  justify-content: flex-start; /* Align to top, change to center if full page centering needed */
+  min-height: 100vh;
+  padding-top: 40px;         /* Adds some spacing from top */
+  background-color: #fdfdfd;
+}
+
+h1 {
+  margin-bottom: 10px;  
+  margin-left: 100px;     /* Reduced gap between heading and table */
+}
+
 .timetable-display {
-    background-color: #FFF1F5;
-    color: #D82F5A;
-    text-align: center;
-    padding: 20px;
-    border-radius: 10px;
-    max-width: 80%;
-    margin: auto;
-    box-shadow: 0px 4px 10px rgba(216, 47, 90, 0.2);
-  }
-  
-  table {
-    width: 100%;
-    border-collapse: collapse;
-    background-color: #FFF1F5;
-    color: #D82F5A;
-    border-radius: 8px;
-    overflow: hidden;
-    box-shadow: 0px 4px 8px rgba(216, 47, 90, 0.2);
-  }
-  
-  th, td {
-    border: 1px solid #D82F5A;
-    padding: 12px;
-    text-align: center;
-  }
-  
-  th {
-    background-color: #D82F5A;
-    color: #FFF1F5;
-  }
-  
-  td {
-    background-color: #FFF1F5;
-  }
-  
+  background-color: #FFF1F5;
+  color: #D82F5A;
+  text-align: center;
+  padding: 20px;
+  border-radius: 10px;
+  max-width: 80%;
+  width: 100%;
+  box-shadow: 0px 4px 10px rgba(216, 47, 90, 0.2);
+  margin-top: 0;  
+  margin-left: 120px;/* Removed margin-top to reduce space */
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  background-color: #FFF1F5;
+  color: #D82F5A;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0px 4px 8px rgba(216, 47, 90, 0.2);
+}
+
+th, td {
+  border: 1px solid #D82F5A;
+  padding: 12px;
+  text-align: center;
+}
+
+th {
+  background-color: #D82F5A;
+  color: #FFF1F5;
+}
+
+td {
+  background-color: #FFF1F5;
+}
+
+/* Save Button Styling */
+.save-button {
+  margin-top: 20px;
+  padding: 10px 20px;
+  background-color: #D82F5A;
+  color: #FFF1F5;
+  border: none;
+  flex-direction: column;
+  justify-content: center;
+  display: flex;
+  text-align: center;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 16px;
+  transition: background-color 0.3s ease;
+}
+
+.save-button:hover {
+  background-color: #b62048;
+}

@@ -7,6 +7,7 @@ const jwt = require("jsonwebtoken");
 
 const User = require("./User");
 const Batch = require("./Batchs");
+const TimetableEntry = require("./TimetableEntry");
 
 const app = express();
 app.use(express.json());
@@ -325,7 +326,55 @@ app.get("/subjects/:fromYear/:year", async (req, res) => {
   }
 });
 
- 
+ app.post("/timetablesave", async (req, res) => {
+  try {
+    const { batchId, year, departmentEntries, timetable } = req.body;
+
+    // Check if any duplicate department entries are sent in the request
+    const uniqueDepartments = Array.from(
+      new Set(departmentEntries.map(entry => `${entry.deptName}-${entry.deptSection}`))
+    ).map(uniqueKey => {
+      const [deptName, deptSection] = uniqueKey.split('-');
+      return { deptName, deptSection };
+    });
+
+    for (let dept of uniqueDepartments) {
+      const exists = await TimetableEntry.findOne({
+        batchId,
+        year,
+        "department.deptName": dept.deptName,
+        "department.deptSection": dept.deptSection
+      });
+
+      if (exists) {
+        await TimetableEntry.updateOne(
+          { _id: exists._id },
+          { timetable }
+        );
+        console.log(`Updated existing timetable for ${dept.deptName}-${dept.deptSection}`);
+      } else {
+        const newEntry = new TimetableEntry({
+          batchId,
+          year,
+          department: {
+            deptName: dept.deptName,
+            deptSection: dept.deptSection
+          },
+          timetable
+        });
+        await newEntry.save();
+        console.log(`Saved new timetable for ${dept.deptName}-${dept.deptSection}`);
+      }
+    }
+
+    res.status(200).json({ message: "Timetable(s) saved successfully" });
+  } catch (error) {
+    console.error("Error saving timetable:", error);
+    res.status(500).json({ message: "Failed to save timetable" });
+  }
+});
+
+
 // Start Server
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));

@@ -118,7 +118,8 @@ const SubjectSelection = () => {
       setTimetable(response.data.timetable);
 
       // Navigate to the timetable page after successful generation
-      navigate(`/createtimetable/timetable/${id}/${year}/timetablepage`);
+      console.log("dept details",deptName,deptSection)
+      navigate(`/createtimetable/timetable/${id}/${year}/timetablepage/${deptName}/${deptSection}`);
     } else {
       alert("Error generating timetable: " + response.data.error);
     }

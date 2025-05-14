@@ -1,30 +1,70 @@
 import React, { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import "../styles/TimetablePage.css";
+import axios from "axios";
 
 const TimetablePage = () => {
   const { id, year } = useParams();
   const [subjects, setSubjects] = useState([]);
   const [timetable, setTimetable] = useState(null);
+  const [departmentEntries, setDepartmentEntries] = useState([])
+
+  const [isSaving, setIsSaving] = useState(false); 
 
   useEffect(() => {
     const fetchSubjects = async () => {
       try {
         const response = await fetch(`http://localhost:5000/subjects/${id}/${year}`);
         const data = await response.json();
+        console.log(data)
         setSubjects(data.subjects || []);
       } catch (err) {
         console.error("Error fetching subjects:", err);
       }
     };
-  
+    const fetchTimetable = async () => {
+      try {
+        const response = await axios.get("http://localhost:5000/timetablesdetails");
+        const data = response.data;
+
+        let foundYear = null;
+
+        data.forEach((batch) => {
+          batch.timetables.forEach((tt) => {
+            tt.years.forEach((yearData) => {
+              if (yearData.yearNumber === parseInt(year)) {
+                foundYear = yearData;
+              }
+            });
+          });
+        });
+
+        if (foundYear) {
+          console.log(foundYear.departments)
+          setDepartmentEntries(foundYear.departments || []);
+        }
+      } catch (error) {
+        console.error("Error fetching timetable:", error);
+      }
+    };
+    fetchTimetable()
     fetchSubjects();
   }, [id, year]);
   
 
 useEffect(() => {
-  if (subjects.length > 0) {
-    // Define the default timetable structure
+  if (subjects.length > 0 && departmentEntries.length > 0) {
+    const filteredSubjects = subjects.filter((subject) =>
+      departmentEntries.some((dept) =>
+        subject.department === dept.deptName && subject.section === dept.deptSection
+      )
+    );
+
+    if (filteredSubjects.length === 0) {
+      console.warn("No matching subjects found for the current department and section.");
+      return;
+    }
+
     const defaultTimetable = [
       { day: "Monday", "9:00 - 10:00": "", "10:00 - 11:00": "", "11:15 - 12:15": "", "12:15 - 1:15": "", "2:00 - 3:00": "", "3:00 - 4:00": "" },
       { day: "Tuesday", "9:00 - 10:00": "", "10:00 - 11:00": "", "11:15 - 12:15": "", "12:15 - 1:15": "", "2:00 - 3:00": "", "3:00 - 4:00": "" },
@@ -33,13 +73,9 @@ useEffect(() => {
       { day: "Friday", "9:00 - 10:00": "", "10:00 - 11:00": "", "11:15 - 12:15": "", "12:15 - 1:15": "", "2:00 - 3:00": "", "3:00 - 4:00": "" },
     ];
 
-    // Shuffle the timetable days
     const shuffledDays = [...defaultTimetable].sort(() => Math.random() - 0.5);
+    const shuffledSubjects = [...filteredSubjects].sort(() => Math.random() - 0.5);
 
-    // Shuffle subjects randomly
-    const shuffledSubjects = [...subjects].sort(() => Math.random() - 0.5);
-
-    // Fill the timetable with subjects based on preferences
     const timetableWithSubjects = shuffledDays.map((row) => {
       let filledRow = { ...row };
       const slots = Object.keys(row).filter((key) => key !== "day");
@@ -51,14 +87,12 @@ useEffect(() => {
       slots.forEach((slot) => {
         let subject = shuffledSubjects[subjectIndex];
 
-        // Skip same subject consecutively more than twice
         while (subject === previousSubject && consecutiveCount >= 2) {
           subjectIndex = (subjectIndex + 1) % shuffledSubjects.length;
           subject = shuffledSubjects[subjectIndex];
           consecutiveCount = 0;
         }
 
-        // If subject has preferences remaining, assign it
         if (subject && subject.preferences > 0) {
           filledRow[slot] = `${subject.staffId} (${subject.courseId})`;
           subject.preferences -= 1;
@@ -68,7 +102,6 @@ useEffect(() => {
           filledRow[slot] = "Free";
         }
 
-        // Move to next subject if preferences exhausted
         if (subject.preferences === 0) {
           subjectIndex = (subjectIndex + 1) % shuffledSubjects.length;
           consecutiveCount = 0;
@@ -78,7 +111,6 @@ useEffect(() => {
       return filledRow;
     });
 
-    // Refill any "Free" slots with remaining preferences
     let remainingSubjects = shuffledSubjects.filter(s => s.preferences > 0);
     let refillIndex = 0;
 
@@ -96,17 +128,43 @@ useEffect(() => {
       });
     });
 
-    // Update the state with the shuffled day timetable
     setTimetable(timetableWithSubjects);
   }
-}, [subjects]);
+}, [subjects, departmentEntries]);
 
+
+
+const handleSaveTimetable = async () => {
+  if (isSaving) return;  // Prevent multiple submissions if already saving
+
+  setIsSaving(true);  // Disable saving to prevent duplicate submissions
+  try {
+    // Send all department entries in one request
+    const response = await axios.post("http://localhost:5000/timetablesave", {
+      batchId: id,
+      year: parseInt(year),
+      departmentEntries: departmentEntries.map(dept => ({
+        deptName: dept.deptName,
+        deptSection: dept.deptSection
+      })),
+      timetable: timetable
+    });
+
+    console.log("Timetable saved successfully:", response.data);
+   
+  } catch (error) {
+    console.error("Failed to save timetable:", error);
+
+  } finally {
+    setIsSaving(false);  // Re-enable the button after the request finishes
+  }
+};
 
 
 
   return (
     <div className="timetable-container">
-      <h2>Timetable - Batch {id}, Year {year}</h2>
+      <h1>Timetable - Batch {id}, Year {year}</h1>
       {timetable ? (
         <div className="timetable-display">
           <table>
@@ -135,6 +193,15 @@ useEffect(() => {
               ))}
             </tbody>
           </table>
+
+          {timetable && (
+  <>
+    <button className="save-button" onClick={handleSaveTimetable}>
+      Save Timetable
+    </button>
+  </>
+)}
+
         </div>
       ) : (
         <p>Loading timetable...</p>
