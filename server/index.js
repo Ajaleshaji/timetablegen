@@ -24,6 +24,7 @@ app.get("/", (req, res) => {
   res.send("Server is running 🚀");
 });
 
+
 // Signup Route
 app.post("/signup", async (req, res) => {
   try {

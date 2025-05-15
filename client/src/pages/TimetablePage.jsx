@@ -78,7 +78,8 @@ useEffect(() => {
     const shuffledDays = [...defaultTimetable].sort(() => Math.random() - 0.5);
     const shuffledSubjects = [...filteredSubjects].sort(() => Math.random() - 0.5);
 
-    const timetableWithSubjects = shuffledDays.map((row) => {
+    const timetableWithSubjects = defaultTimetable.map((row) => {
+
       let filledRow = { ...row };
       const slots = Object.keys(row).filter((key) => key !== "day");
 
