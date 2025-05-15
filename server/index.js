@@ -330,47 +330,69 @@ app.get("/subjects/:fromYear/:year", async (req, res) => {
   try {
     const { batchId, year, departmentEntries, timetable } = req.body;
 
-    // Check if any duplicate department entries are sent in the request
-    const uniqueDepartments = Array.from(
-      new Set(departmentEntries.map(entry => `${entry.deptName}-${entry.deptSection}`))
-    ).map(uniqueKey => {
-      const [deptName, deptSection] = uniqueKey.split('-');
-      return { deptName, deptSection };
-    });
+    // Find existing timetable for this batch and year
+    let existingEntry = await TimetableEntry.findOne({ batchId, year });
 
-    for (let dept of uniqueDepartments) {
-      const exists = await TimetableEntry.findOne({
+    if (existingEntry) {
+      // Merge new departments without duplicates
+      const newDepartments = departmentEntries.filter(
+        (newDept) =>
+          !existingEntry.departments.some(
+            (existingDept) =>
+              existingDept.deptName === newDept.deptName &&
+              existingDept.deptSection === newDept.deptSection
+          )
+      );
+
+      existingEntry.departments.push(...newDepartments);
+
+      // Update timetable (overwrite or merge as needed)
+      existingEntry.timetable = timetable;
+
+      await existingEntry.save();
+      console.log(`Updated existing timetable for batch ${batchId} year ${year}`);
+    } else {
+      // Create new timetable entry with all departments
+      const newEntry = new TimetableEntry({
         batchId,
         year,
-        "department.deptName": dept.deptName,
-        "department.deptSection": dept.deptSection
+        departments: departmentEntries,
+        timetable,
       });
-
-      if (exists) {
-        await TimetableEntry.updateOne(
-          { _id: exists._id },
-          { timetable }
-        );
-        console.log(`Updated existing timetable for ${dept.deptName}-${dept.deptSection}`);
-      } else {
-        const newEntry = new TimetableEntry({
-          batchId,
-          year,
-          department: {
-            deptName: dept.deptName,
-            deptSection: dept.deptSection
-          },
-          timetable
-        });
-        await newEntry.save();
-        console.log(`Saved new timetable for ${dept.deptName}-${dept.deptSection}`);
-      }
+      await newEntry.save();
+      console.log(`Created new timetable for batch ${batchId} year ${year}`);
     }
 
-    res.status(200).json({ message: "Timetable(s) saved successfully" });
+    res.status(200).json({ message: "Timetable saved successfully" });
   } catch (error) {
     console.error("Error saving timetable:", error);
     res.status(500).json({ message: "Failed to save timetable" });
+  }
+});
+
+
+
+app.get("/recenttimetables", async (req, res) => {
+  try {
+    const recent = await TimetableEntry.find()
+      .sort({ createdAt: -1 }) // recent first
+      .limit(5); // adjust how many you want
+
+    res.json(recent);
+  } catch (error) {
+    console.error("Error fetching recent timetables:", error);
+    res.status(500).json({ message: "Error fetching recent timetables" });
+  }
+});
+
+app.get("/timetables/:id", async (req, res) => {
+  try {
+    const entry = await TimetableEntry.findById(req.params.id);
+    if (!entry) return res.status(404).json({ message: "Not found" });
+    res.json(entry);
+  } catch (err) {
+    console.error("Error fetching timetable:", err);
+    res.status(500).json({ message: "Error fetching timetable" });
   }
 });
 

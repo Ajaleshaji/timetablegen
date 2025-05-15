@@ -9,6 +9,7 @@ import TimetableDetails from './pages/TimetableDetails';
 import SubjectSelection from './pages/SubjectSelection';
 import TimetablePage from './pages/TimetablePage';
 import TimetableFolder from './pages/TimeTableFolder';
+import SavedTimetable from './pages/SavedTimetable';
 
 function App() {
   return (
@@ -29,6 +30,7 @@ function App() {
           <Route path="createtimetable/timetable/:id/:year" element={<SubjectSelection />} />
           <Route path="createtimetable/timetable/:id/:year/timetablepage" element={<TimetablePage />} />
           <Route path="createtimetable/timetable/:id/:year/timetablefolder" element={<TimetableFolder />} />
+          <Route path="/timetables/:id" element={<SavedTimetable/>} />
         </Route>
       </Routes>
     </BrowserRouter>

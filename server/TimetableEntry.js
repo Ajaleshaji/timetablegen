@@ -10,16 +10,18 @@ const TimetableEntrySchema = new mongoose.Schema({
     type: Number,
     required: true,
   },
-  department: {
-    deptName: {
-      type: String,
-      required: true,
-    },
-    deptSection: {
-      type: String,
-      required: true,
-    },
-  },
+  departments: [  // ✅ Changed from 'department' to 'departments' and made it an array
+    {
+      deptName: {
+        type: String,
+        required: true,
+      },
+      deptSection: {
+        type: String,
+        required: true,
+      },
+    }
+  ],
   timetable: [
     {
       day: {

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import "../styles/TimetablePage.css";
 import axios from "axios";
+import { useNavigate } from "react-router-dom";
 
 const TimetablePage = () => {
   const { id, year } = useParams();
@@ -10,6 +11,7 @@ const TimetablePage = () => {
   const [departmentEntries, setDepartmentEntries] = useState([])
 
   const [isSaving, setIsSaving] = useState(false); 
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchSubjects = async () => {
@@ -135,11 +137,10 @@ useEffect(() => {
 
 
 const handleSaveTimetable = async () => {
-  if (isSaving) return;  // Prevent multiple submissions if already saving
+  if (isSaving) return;
 
-  setIsSaving(true);  // Disable saving to prevent duplicate submissions
+  setIsSaving(true);
   try {
-    // Send all department entries in one request
     const response = await axios.post("http://localhost:5000/timetablesave", {
       batchId: id,
       year: parseInt(year),
@@ -147,19 +148,20 @@ const handleSaveTimetable = async () => {
         deptName: dept.deptName,
         deptSection: dept.deptSection
       })),
-      timetable: timetable
+      timetable
     });
 
     console.log("Timetable saved successfully:", response.data);
-   
+
+    // ✅ Redirect to Home after saving
+    navigate("/home");
+
   } catch (error) {
     console.error("Failed to save timetable:", error);
-
   } finally {
-    setIsSaving(false);  // Re-enable the button after the request finishes
+    setIsSaving(false);
   }
 };
-
 
 
   return (

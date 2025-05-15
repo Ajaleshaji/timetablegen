@@ -112,7 +112,7 @@
 
 .timetable-container {
     padding: 10px;
-    margin-top: 20px;
+    margin-top: 0px;
     display: flex;
     flex-direction: row;
     gap: 50px;
