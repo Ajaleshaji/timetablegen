@@ -57,8 +57,10 @@ const TimetablePage = () => {
 useEffect(() => {
   if (subjects.length > 0 && departmentEntries.length > 0) {
     const filteredSubjects = subjects.filter((subject) =>
-      departmentEntries.some((dept) =>
-        subject.department === dept.deptName && subject.section === dept.deptSection
+      departmentEntries.some(
+        (dept) =>
+          subject.department === dept.deptName &&
+          subject.section === dept.deptSection
       )
     );
 
@@ -75,63 +77,43 @@ useEffect(() => {
       { day: "Friday", "9:00 - 10:00": "", "10:00 - 11:00": "", "11:15 - 12:15": "", "12:15 - 1:15": "", "2:00 - 3:00": "", "3:00 - 4:00": "" },
     ];
 
-    const shuffledDays = [...defaultTimetable].sort(() => Math.random() - 0.5);
-    const shuffledSubjects = [...filteredSubjects].sort(() => Math.random() - 0.5);
+    const timeSlots = ["9:00 - 10:00", "10:00 - 11:00", "11:15 - 12:15", "12:15 - 1:15", "2:00 - 3:00", "3:00 - 4:00"];
 
-    const timetableWithSubjects = defaultTimetable.map((row) => {
+    const subjectsState = filteredSubjects.map((subj) => ({
+      ...subj,
+      remaining: subj.preferences,
+    }));
 
-      let filledRow = { ...row };
-      const slots = Object.keys(row).filter((key) => key !== "day");
+    const finalTimetable = defaultTimetable.map((dayRow) => {
+      const newRow = { day: dayRow.day };
+      const prevAssignedSubject = [];
 
-      let subjectIndex = 0;
-      let previousSubject = null;
-      let consecutiveCount = 0;
+      timeSlots.forEach((slot, idx) => {
+        let assigned = false;
 
-      slots.forEach((slot) => {
-        let subject = shuffledSubjects[subjectIndex];
+        for (let subj of subjectsState) {
+          const subjectKey = `${subj.staffId} (${subj.courseId})`;
 
-        while (subject === previousSubject && consecutiveCount >= 2) {
-          subjectIndex = (subjectIndex + 1) % shuffledSubjects.length;
-          subject = shuffledSubjects[subjectIndex];
-          consecutiveCount = 0;
-        }
-
-        if (subject && subject.preferences > 0) {
-          filledRow[slot] = `${subject.staffId} (${subject.courseId})`;
-          subject.preferences -= 1;
-          previousSubject = subject;
-          consecutiveCount += 1;
-        } else {
-          filledRow[slot] = "Free";
-        }
-
-        if (subject.preferences === 0) {
-          subjectIndex = (subjectIndex + 1) % shuffledSubjects.length;
-          consecutiveCount = 0;
-        }
-      });
-
-      return filledRow;
-    });
-
-    let remainingSubjects = shuffledSubjects.filter(s => s.preferences > 0);
-    let refillIndex = 0;
-
-    timetableWithSubjects.forEach((dayRow) => {
-      Object.keys(dayRow).forEach((slot) => {
-        if (slot !== "day" && dayRow[slot] === "Free" && remainingSubjects.length > 0) {
-          const subject = remainingSubjects[refillIndex];
-          dayRow[slot] = `${subject.staffId} (${subject.courseId})`;
-          subject.preferences -= 1;
-          if (subject.preferences === 0) {
-            remainingSubjects = remainingSubjects.filter(s => s.preferences > 0);
+          // Check if subject has remaining slots AND is not the same as previous period
+          if (subj.remaining > 0 && prevAssignedSubject[idx - 1] !== subjectKey) {
+            newRow[slot] = subjectKey;
+            subj.remaining--;
+            prevAssignedSubject[idx] = subjectKey;
+            assigned = true;
+            break;
           }
-          refillIndex = (refillIndex + 1) % remainingSubjects.length;
+        }
+
+        if (!assigned) {
+          newRow[slot] = "Free";
+          prevAssignedSubject[idx] = null;
         }
       });
+
+      return newRow;
     });
 
-    setTimetable(timetableWithSubjects);
+    setTimetable(finalTimetable);
   }
 }, [subjects, departmentEntries]);
 
