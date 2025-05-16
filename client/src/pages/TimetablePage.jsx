@@ -79,10 +79,21 @@ useEffect(() => {
 
     const timeSlots = ["9:00 - 10:00", "10:00 - 11:00", "11:15 - 12:15", "12:15 - 1:15", "2:00 - 3:00", "3:00 - 4:00"];
 
+    // Helper: Fisher-Yates shuffle
+    const shuffleArray = (array) => {
+      for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+      }
+    };
+
     const subjectsState = filteredSubjects.map((subj) => ({
       ...subj,
       remaining: subj.preferences,
     }));
+
+    // Shuffle subjects before assigning
+    shuffleArray(subjectsState);
 
     const finalTimetable = defaultTimetable.map((dayRow) => {
       const newRow = { day: dayRow.day };
@@ -116,6 +127,7 @@ useEffect(() => {
     setTimetable(finalTimetable);
   }
 }, [subjects, departmentEntries]);
+
 
 
 
