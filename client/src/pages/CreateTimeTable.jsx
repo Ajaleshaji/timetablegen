@@ -23,12 +23,10 @@ const CreateTimeTable = () => {
     fetchTimetables();
   }, []);
 
-  // Create new timetable
   const handleCreate = async () => {
     const fromYearInt = parseInt(fromYear, 10);
     const toYearInt = parseInt(toYear, 10);
 
-    // Input validation
     if (isNaN(fromYearInt) || isNaN(toYearInt)) {
       alert("Please enter valid numeric years.");
       return;
@@ -65,7 +63,6 @@ const CreateTimeTable = () => {
     }
   };
 
-  // Navigate to timetable details
   const handleNavigate = (index) => {
     navigate(`/createtimetable/timetable/${index}`);
   };

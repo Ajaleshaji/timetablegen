@@ -79,7 +79,6 @@ useEffect(() => {
 
     const timeSlots = ["9:00 - 10:00", "10:00 - 11:00", "11:15 - 12:15", "12:15 - 1:15", "2:00 - 3:00", "3:00 - 4:00"];
 
-    // Helper: Fisher-Yates shuffle
     const shuffleArray = (array) => {
       for (let i = array.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
@@ -92,7 +91,6 @@ useEffect(() => {
       remaining: subj.preferences,
     }));
 
-    // Shuffle subjects before assigning
     shuffleArray(subjectsState);
 
     const finalTimetable = defaultTimetable.map((dayRow) => {
@@ -105,7 +103,6 @@ useEffect(() => {
         for (let subj of subjectsState) {
           const subjectKey = `${subj.staffId} (${subj.courseId})`;
 
-          // Check if subject has remaining slots AND is not the same as previous period
           if (subj.remaining > 0 && prevAssignedSubject[idx - 1] !== subjectKey) {
             newRow[slot] = subjectKey;
             subj.remaining--;
@@ -148,7 +145,6 @@ const handleSaveTimetable = async () => {
 
     console.log("Timetable saved successfully:", response.data);
 
-    // ✅ Redirect to Home after saving
     navigate("/home");
 
   } catch (error) {

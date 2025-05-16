@@ -22,7 +22,6 @@ const SavedTimetable = () => {
 
   if (!timetable) return <p>Loading...</p>;
 
-  // Defensive check for departments
   const firstDept =
     timetable.departments && timetable.departments.length > 0
       ? timetable.departments[0]

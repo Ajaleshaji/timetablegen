@@ -13,19 +13,15 @@ const app = express();
 app.use(express.json());
 app.use(cors({ origin: "*" }));
 
-// Connect to MongoDB
 mongoose
   .connect(process.env.MONGODB_URI || "mongodb://localhost:27017/myconnection")
   .then(() => console.log("✅ Connected to MongoDB"))
   .catch((error) => console.error("❌ MongoDB connection error:", error));
 
-// Root Route - Server Health Check
 app.get("/", (req, res) => {
   res.send("Server is running 🚀");
 });
 
-
-// Signup Route
 app.post("/signup", async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -44,7 +40,6 @@ app.post("/signup", async (req, res) => {
   }
 });
 
-// Login Route
 app.post("/login", async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -64,13 +59,12 @@ app.post("/login", async (req, res) => {
   }
 });
 
-// Timetable Creation/Update Route
 app.post("/timetables", async (req, res) => {
   try {
     console.log("📥 Received Data:", req.body);
 
     let { fromYear, toYear, subjects, departments } = req.body;
-    // Convert string to numbers safely
+   
     fromYear = parseInt(fromYear, 10);
     toYear = parseInt(toYear, 10);
 
@@ -78,47 +72,43 @@ app.post("/timetables", async (req, res) => {
       return res.status(400).json({ message: "Invalid fromYear or toYear. Please check input values." });
     }
 
-    // Ensure these are arrays
     subjects = Array.isArray(subjects) ? subjects : [];
     departments = Array.isArray(departments) ? departments : [];
 
-    // Find or create the batch
     let batch = await Batch.findOne({ fromYear, toYear });
 
     if (!batch) {
-      // Create a new batch with empty timetable structure
+      
       batch = new Batch({
         fromYear,
         toYear,
         timetables: [
           {
-            years: [], // We'll populate below
+            years: [], 
           },
         ],
       });
     }
 
-    // Track years to add
     const newYears = [];
 
     for (let year = fromYear; year <= toYear; year++) {
       const existingYear = batch.timetables[0].years.find((y) => y.yearNumber === year);
 
       if (existingYear) {
-        // Merge data (optional: deduplicate)
+       
         if (subjects.length) existingYear.subjects.push(...subjects);
         if (departments.length) existingYear.departments.push(...departments);
       } else {
-        // Add new year entry
+       
         newYears.push({
           yearNumber: year,
-          subjects: [...subjects],      // clone to avoid shared ref
+          subjects: [...subjects],   
           departments: [...departments],
         });
       }
     }
 
-    // Push newly created year objects into batch
     if (newYears.length > 0) {
       batch.timetables[0].years.push(...newYears);
     }
@@ -170,8 +160,6 @@ app.post("/timetablesdetails", async (req, res) => {
   }
 });
 
-
-// POST route only for department entries
 app.post("/timetablesdetails/departments", async (req, res) => {
   try {
     let { fromYear, toYear, year, departments } = req.body;
@@ -222,7 +210,6 @@ app.get("/timetablesdetails", async (req, res) => {
   }
 });
 
-// Fetch Timetables Route
 app.get("/timetables", async (req, res) => {
   try {
     const batches = await Batch.find({});
@@ -248,7 +235,6 @@ app.post('/generateTimetable', async (req, res) => {
       return res.status(404).json({ message: "No subjects found for this year" });
     }
 
-    // Base timetable structure (5 days, 6 periods each)
     const defaultTimetable = [
       { day: "Monday", slots: ["", "", "", "", "", ""] },
       { day: "Tuesday", slots: ["", "", "", "", "", ""] },
@@ -257,7 +243,6 @@ app.post('/generateTimetable', async (req, res) => {
       { day: "Friday", slots: ["", "", "", "", "", ""] },
     ];
 
-    // Prepare subject usage counter with preference
     const subjectUsage = {};
     yearData.subjects.forEach((subject) => {
       const key = `${subject.staffId}-${subject.courseId}`;
@@ -267,7 +252,6 @@ app.post('/generateTimetable', async (req, res) => {
       };
     });
 
-    // Flatten subjects based on preference count
     const availableSubjects = [];
     for (const key in subjectUsage) {
       const { staffId, courseId, remaining } = subjectUsage[key];
@@ -276,18 +260,14 @@ app.post('/generateTimetable', async (req, res) => {
       }
     }
 
-    // Total available slots in the timetable (5 days * 6 periods)
     const totalSlots = defaultTimetable.reduce((acc, day) => acc + day.slots.length, 0);
 
-    // If there are more subjects than available slots, it won't fit
     if (availableSubjects.length > totalSlots) {
       return res.status(400).json({ error: "Not enough slots to accommodate all subjects based on preference." });
     }
 
-    // Shuffle the subject list to randomize allocation
     const shuffledSubjects = availableSubjects.sort(() => Math.random() - 0.5);
 
-    // Fill the timetable respecting preferences
     let subjectIndex = 0;
     const generated = defaultTimetable.map((row) => {
       return {
@@ -331,11 +311,10 @@ app.get("/subjects/:fromYear/:year", async (req, res) => {
   try {
     const { batchId, year, departmentEntries, timetable } = req.body;
 
-    // Find existing timetable for this batch and year
     let existingEntry = await TimetableEntry.findOne({ batchId, year });
 
     if (existingEntry) {
-      // Merge new departments without duplicates
+
       const newDepartments = departmentEntries.filter(
         (newDept) =>
           !existingEntry.departments.some(
@@ -347,13 +326,12 @@ app.get("/subjects/:fromYear/:year", async (req, res) => {
 
       existingEntry.departments.push(...newDepartments);
 
-      // Update timetable (overwrite or merge as needed)
       existingEntry.timetable = timetable;
 
       await existingEntry.save();
       console.log(`Updated existing timetable for batch ${batchId} year ${year}`);
     } else {
-      // Create new timetable entry with all departments
+      
       const newEntry = new TimetableEntry({
         batchId,
         year,
@@ -376,8 +354,8 @@ app.get("/subjects/:fromYear/:year", async (req, res) => {
 app.get("/recenttimetables", async (req, res) => {
   try {
     const recent = await TimetableEntry.find()
-      .sort({ createdAt: -1 }) // recent first
-      .limit(5); // adjust how many you want
+      .sort({ createdAt: -1 }) 
+      .limit(5);
 
     res.json(recent);
   } catch (error) {
@@ -397,7 +375,5 @@ app.get("/timetables/:id", async (req, res) => {
   }
 });
 
-
-// Start Server
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));

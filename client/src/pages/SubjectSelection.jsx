@@ -5,7 +5,7 @@ import "../styles/SubjectSelection.css";
 
 const SubjectSelection = () => {
   const { id, year } = useParams();
-  const navigate = useNavigate(); // <-- Add navigate hook
+  const navigate = useNavigate();
 
   const [staffId, setStaffId] = useState("");
   const [courseId, setCourseId] = useState("");
@@ -117,7 +117,6 @@ const SubjectSelection = () => {
     if (response.status === 200) {
       setTimetable(response.data.timetable);
 
-      // Navigate to the timetable page after successful generation
       console.log("dept details",deptName,deptSection)
       navigate(`/createtimetable/timetable/${id}/${year}/timetablepage/${deptName}/${deptSection}`);
     } else {

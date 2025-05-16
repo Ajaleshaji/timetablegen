@@ -15,14 +15,12 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
-        {/* Redirect root to login */}
+     
         <Route path="/" element={<Navigate to="/login" />} />
 
-        {/* Authentication Routes */}
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
 
-        {/* Main App Layout */}
         <Route path="/" element={<Layout />}>
           <Route path="home" element={<Home />} />
           <Route path="createtimetable" element={<CreateTimeTable />} />
