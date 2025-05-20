@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import axios from "axios";
-import "../styles/TimetablePage.css"
+import "../styles/TimeTablePage.css"
 import { useNavigate } from "react-router-dom";
 
 const TimetablePage = () => {
