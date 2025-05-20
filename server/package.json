@@ -6,12 +6,10 @@
   
     "main": "index.js",
   
-    "scripts": {
-  
-      
-    "start": "nodemon index.js"
-  
-    },
+ "scripts": {
+  "start": "node index.js",
+  "dev": "nodemon index.js"
+},
   
     "dependencies": {
   
@@ -34,7 +32,7 @@
     "mongoose": "^8.12.1",
   
       
-    "nodemon": "^3.1.9"
+    "nodemon": "^3.1.10"
   
     }
 }
