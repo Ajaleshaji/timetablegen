@@ -9,7 +9,7 @@ const SavedTimetable = () => {
   useEffect(() => {
     const fetchTimetable = async () => {
       try {
-        const res = await axios.get(`http://localhost:5000/timetables/${id}`);
+        const res = await axios.get(`https://timetablegen-7h8v.onrender.com`);
         
         setTimetable(res.data);
       } catch (err) {

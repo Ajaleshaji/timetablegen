@@ -18,7 +18,7 @@ const TimetableDetails = () => {
         }
   
         const fromYear = parseInt(id, 10);
-        const response = await fetch("http://localhost:5000/timetablesdetails");
+        const response = await fetch("https://timetablegen-7h8v.onrender.com");
         const data = await response.json();
   
         const batch = data.find((batch) => batch.fromYear === fromYear);

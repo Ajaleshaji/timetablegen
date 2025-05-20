@@ -13,7 +13,7 @@ const CreateTimeTable = () => {
   useEffect(() => {
     const fetchTimetables = async () => {
       try {
-        const response = await fetch("http://localhost:5000/timetables");
+        const response = await fetch("https://timetablegen-7h8v.onrender.com/");
         const data = await response.json();
         setTimetables(data);
       } catch (error) {
@@ -40,7 +40,7 @@ const CreateTimeTable = () => {
     try {
       console.log("Sending Data: ", { fromYear: fromYearInt, toYear: toYearInt });
 
-      const response = await fetch("http://localhost:5000/timetables", {
+      const response = await fetch("https://timetablegen-7h8v.onrender.com", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ fromYear: fromYearInt, toYear: toYearInt }),
