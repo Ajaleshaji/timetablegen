@@ -23,7 +23,7 @@ const SubjectSelection = () => {
   useEffect(() => {
     const fetchTimetable = async () => {
       try {
-        const response = await axios.get("https://timetablegen-7h8v.onrender.com");
+        const response = await axios.get("https://timetablegen-7h8v.onrender.com/timetablesdetails");
         const data = response.data;
 
         let foundYear = null;
@@ -59,7 +59,7 @@ const SubjectSelection = () => {
     const newEntry = { staffId, courseId, department, section, preferences };
 
     try {
-      const response = await axios.post("https://timetablegen-7h8v.onrender.com", {
+      const response = await axios.post("https://timetablegen-7h8v.onrender.com/timetablesdetails", {
         fromYear,
         toYear: fromYear + 3,
         year: selectedYear,
@@ -89,7 +89,7 @@ const SubjectSelection = () => {
     const newDeptEntry = { deptName, deptSection };
 
     try {
-      const response = await axios.post("https://timetablegen-7h8v.onrender.com", {
+      const response = await axios.post("https://timetablegen-7h8v.onrender.com/timetablesdetails/departments", {
         fromYear,
         toYear: fromYear + 3,
         year: selectedYear,
@@ -109,7 +109,7 @@ const SubjectSelection = () => {
 
   const generateTimetable = async () => {
   try {
-    const response = await axios.post("https://timetablegen-7h8v.onrender.com", {
+    const response = await axios.post("https://timetablegen-7h8v.onrender.com/generateTimetable", {
       fromYear: parseInt(id, 10),
       year: parseInt(year, 10),
     });

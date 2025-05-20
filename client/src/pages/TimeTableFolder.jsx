@@ -8,7 +8,7 @@ const TimetableFolder = () => {
     useEffect(() => {
         const fetchTimetables = async () => {
             try {
-                const response = await fetch("https://timetablegen-7h8v.onrender.com");
+                const response = await fetch("https://timetablegen-7h8v.onrender.com/getTimetables");
                 if (response.ok) {
                     const data = await response.json();
                     setTimetables(data);

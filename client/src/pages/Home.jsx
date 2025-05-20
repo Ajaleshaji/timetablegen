@@ -10,7 +10,7 @@ const Home = () => {
   useEffect(() => {
     const fetchRecent = async () => {
       try {
-        const res = await axios.get("https://timetablegen-7h8v.onrender.com");
+        const res = await axios.get("https://timetablegen-7h8v.onrender.com/recenttimetables");
         setRecentTimetables(res.data);
       } catch (err) {
         console.error("Error loading recent timetables:", err);

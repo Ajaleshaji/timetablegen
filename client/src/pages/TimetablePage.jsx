@@ -16,7 +16,7 @@ const TimetablePage = () => {
   useEffect(() => {
     const fetchSubjects = async () => {
       try {
-        const response = await fetch(`https://timetablegen-7h8v.onrender.com`);
+        const response = await fetch(`https://timetablegen-7h8v.onrender.com/subjects/${id}/${year}`);
         const data = await response.json();
         console.log(data)
         setSubjects(data.subjects || []);
@@ -26,7 +26,7 @@ const TimetablePage = () => {
     };
     const fetchTimetable = async () => {
       try {
-        const response = await axios.get("https://timetablegen-7h8v.onrender.com");
+        const response = await axios.get("https://timetablegen-7h8v.onrender.com/timetablesdetails");
         const data = response.data;
 
         let foundYear = null;
@@ -133,7 +133,7 @@ const handleSaveTimetable = async () => {
 
   setIsSaving(true);
   try {
-    const response = await axios.post("https://timetablegen-7h8v.onrender.com", {
+    const response = await axios.post("https://timetablegen-7h8v.onrender.com/timetablesave", {
       batchId: id,
       year: parseInt(year),
       departmentEntries: departmentEntries.map(dept => ({
