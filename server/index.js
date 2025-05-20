@@ -14,13 +14,16 @@ app.use(express.json());
 app.use(cors({ origin: "*" }));
 
 mongoose
-  .connect(process.env.MONGODB_URI || "mongodb://localhost:27017/myconnection")
+  .connect(
+    process.env.MONGODB_URI || "mongodb+srv://ajaleshb2023lcse:aji12345@timetablegen.zimhhiz.mongodb.net/timetablegen?retryWrites=true&w=majority",
+    {
+      useNewUrlParser: true,
+      useUnifiedTopology: true,
+    }
+  )
   .then(() => console.log("✅ Connected to MongoDB"))
   .catch((error) => console.error("❌ MongoDB connection error:", error));
 
-app.get("/", (req, res) => {
-  res.send("Server is running 🚀");
-});
 
 app.post("/signup", async (req, res) => {
   try {
@@ -42,22 +45,34 @@ app.post("/signup", async (req, res) => {
 
 app.post("/login", async (req, res) => {
   try {
+    console.log("Request body:", req.body); // 👈 ADD THIS LINE
+
     const { email, password } = req.body;
-    if (!email || !password) return res.status(400).json({ message: "All fields are required" });
+    if (!email || !password) {
+      console.log("Missing email or password");
+      return res.status(400).json({ message: "All fields are required" });
+    }
 
     const user = await User.findOne({ email });
-    if (!user) return res.status(400).json({ message: "User not found" });
+    if (!user) {
+      console.log("User not found");
+      return res.status(400).json({ message: "User not found" });
+    }
 
     const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) return res.status(400).json({ message: "Invalid credentials" });
+    if (!isMatch) {
+      console.log("Invalid credentials");
+      return res.status(400).json({ message: "Invalid credentials" });
+    }
 
     const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET || "default_secret", { expiresIn: "1h" });
-
     res.json({ message: "Login successful", token });
   } catch (error) {
+    console.error("Login error:", error.message);
     res.status(500).json({ message: "Login error", error: error.message });
   }
 });
+
 
 app.post("/timetables", async (req, res) => {
   try {
